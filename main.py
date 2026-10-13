@@ -3,6 +3,7 @@
 # Railway Ready
 # Created By PIXON
 # v13.4: IP & concurrent-user limits disabled on auto/manual create only (UI unchanged)
+# Railway infra: proxy-headers, WS keepalive, single-worker, /health for edge
 # ============================================================
 import asyncio
 import base64
@@ -39,7 +40,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # ============================================================
 
 APP_NAME = "PXPanel"
-APP_VERSION = "13.4.0"
+APP_VERSION = "13.4.0-railway"
 
 SUPPORT_USERNAME = "@logic_sec"
 SUPPORT_URL = "https://t.me/logic_sec"
@@ -114,6 +115,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Trust Railway edge X-Forwarded-* (client IP, proto, host)
+try:
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+except Exception:
+    pass
 
 
 # ============================================================
@@ -780,6 +788,31 @@ LOGIN_FAILURES = defaultdict(deque)
 LOGIN_LOCKED_UNTIL = {}
 
 
+
+def link_owner_id(link: dict | None) -> str | None:
+    if not link:
+        return None
+    return link.get("owner_id")
+
+
+def session_can_access_link(meta: dict, link: dict | None) -> bool:
+    """Owner sees all; admin only own configs."""
+    if not link:
+        return False
+    if (meta or {}).get("role") == "owner":
+        return True
+    aid = (meta or {}).get("admin_id")
+    return bool(aid) and link.get("owner_id") == aid
+
+
+def admin_remaining_bytes(admin: dict) -> int:
+    limit = int(admin.get("limit_bytes") or 0)
+    if limit <= 0:
+        return 10**18  # unlimited
+    used = int(admin.get("used_bytes") or 0)
+    return max(0, limit - used)
+
+
 def _cleanup_login_state(ip: str, now: float | None = None):
     now = now if now is not None else time.time()
 
@@ -1000,8 +1033,19 @@ def generate_vless_link(
     alpn_value = (alpn or DEFAULT_ALPN_BY_PROTOCOL.get(protocol, "http/1.1")).strip()
     label = quote(str(remark or "PXPanel"), safe="")
     if protocol == "vless-ws":
-        q = {"encryption":"none","security":"tls","type":"ws","host":host,"path":f"/ws/{uuid}","sni":host,"fp":fp,"alpn":alpn_value}
-        return "vless://" + uuid + "@" + host + ":" + str(port_value) + "?" + "&".join(f"{k}={quote(str(v), safe=',/') }" for k,v in q.items()) + "#" + label
+        # Railway edge: force http/1.1 ALPN (WS upgrade more reliable than h2 on edge)
+        alpn_ws = "http/1.1"
+        q = {
+            "encryption": "none",
+            "security": "tls",
+            "type": "ws",
+            "host": host,
+            "path": f"/ws/{uuid}",
+            "sni": host,
+            "fp": fp,
+            "alpn": alpn_ws,
+        }
+        return "vless://" + uuid + "@" + host + ":" + str(port_value) + "?" + "&".join(f"{k}={quote(str(v), safe=',/')}" for k, v in q.items()) + "#" + label
     if protocol.startswith("xhttp-"):
         mode = protocol.replace("xhttp-", "")
         q = {"encryption":"none","security":"tls","type":"xhttp","mode":mode,"host":host,"path":f"/xhttp-siz10/{mode}/{uuid}","sni":host,"fp":fp,"alpn":alpn_value}
@@ -1425,6 +1469,7 @@ async def make_link(
     alarm_enabled: bool = False,
     category_id: str = "0",
     config_count: int = 1,
+    owner_id: str | None = None,
 ):
 
     protocol = normalize_protocol(protocol)
@@ -1462,8 +1507,8 @@ async def make_link(
         "created_at":
             datetime.now().isoformat(),
 
-        "active":
-            True,
+        "active": True,
+        "owner_id": owner_id,
 
         "expires_at":
             expires_at,
@@ -3007,6 +3052,24 @@ async def create_link_api(
     else:
         label_val = sanitize_config_name(str(label_val))
 
+    
+    token = request.cookies.get(SESSION_COOKIE)
+    meta = get_session_meta(token)
+    owner_id = None
+    if meta.get("role") == "admin":
+        owner_id = meta.get("admin_id")
+        admin = ADMIN_ACCOUNTS.get(owner_id or "") or {}
+        if not admin_is_valid(admin):
+            raise HTTPException(status_code=403, detail="حساب ادمین معتبر نیست")
+        remain = admin_remaining_bytes(admin)
+        if limit_bytes > remain:
+            raise HTTPException(
+                status_code=400,
+                detail=f"حجم درخواستی بیشتر از سهمیه باقی‌مانده ادمین است ({remain} بایت)",
+            )
+        # cap at remaining if limit is 0 treat as no extra from admin pool for unlimited? 
+        # For admin, 0 means use remaining quota as soft info only
+
     uid, link = await make_link(
         label=label_val,
         limit_bytes=limit_bytes,
@@ -3036,6 +3099,7 @@ async def create_link_api(
         alarm_enabled=alarm_enabled,
         category_id=category_id,
         config_count=config_count,
+        owner_id=owner_id,
     )
 
     host = get_host(request)
@@ -3077,6 +3141,9 @@ async def create_auto_link(
     }
     cfg = profiles.get(profile, profiles["balanced"])
     config_count = safe_int(body.get("config_count", 1), minimum=1, maximum=40)
+    token = request.cookies.get(SESSION_COOKIE)
+    meta = get_session_meta(token)
+    owner_id = meta.get("admin_id") if meta.get("role") == "admin" else None
     uid, link = await make_link(
         label=auto_config_name(), limit_bytes=0, expires_at=None,
         ip_limit=cfg["ip"], speed_limit_bytes=cfg["speed"], connection_limit=cfg["conn"],
@@ -3084,6 +3151,7 @@ async def create_auto_link(
         protocol=protocol, fingerprint=cfg["fp"],
         alpn=DEFAULT_ALPN_BY_PROTOCOL.get(protocol, ""), port=443, fragment=cfg["fragment"],
         config_count=config_count,
+        owner_id=owner_id,
     )
     link["security_profile"] = profile
     result = {**get_link_info(link, uid, host), "ok": True, "profile": profile}
@@ -3109,12 +3177,17 @@ async def list_links(
 
     host = get_host(request)
 
+    token = request.cookies.get(SESSION_COOKIE)
+    meta = get_session_meta(token)
+
     async with LINKS_LOCK:
         snapshot = dict(LINKS)
 
     result = []
 
     for uid, link in snapshot.items():
+        if not session_can_access_link(meta, link):
+            continue
 
         info = get_link_info(
             link,
@@ -3125,6 +3198,7 @@ async def list_links(
         result.append(
             {
                 **info,
+                "owner_id": link.get("owner_id"),
 
                 "created_at":
                     link.get(
@@ -3286,6 +3360,9 @@ async def update_link(
             detail="اطلاعات نامعتبر است",
         )
 
+    token = request.cookies.get(SESSION_COOKIE)
+    meta = get_session_meta(token)
+
     async with LINKS_LOCK:
 
         if uid not in LINKS:
@@ -3295,6 +3372,8 @@ async def update_link(
             )
 
         link = LINKS[uid]
+        if not session_can_access_link(meta, link):
+            raise HTTPException(status_code=403, detail="دسترسی به این کانفیگ مجاز نیست")
 
         old_sub = link.get(
             "sub_id"
@@ -3729,8 +3808,17 @@ async def link_action(
 @app.delete("/api/links/{uid}")
 async def delete_link(
     uid: str,
+    request: Request,
     _=Depends(require_auth),
 ):
+    token = request.cookies.get(SESSION_COOKIE)
+    meta = get_session_meta(token)
+    async with LINKS_LOCK:
+        link = LINKS.get(uid)
+        if not link:
+            raise HTTPException(status_code=404, detail="link not found")
+        if not session_can_access_link(meta, link):
+            raise HTTPException(status_code=403, detail="دسترسی مجاز نیست")
 
     label = await remove_link(uid)
 
@@ -3818,8 +3906,8 @@ async def subscription_single(
         time_text = "∞"
     label = str(link.get("label") or "Config")
     stats_remark = f"{label} | {volume_text} | {time_text}"
-    stats_line = generate_vless_link(uuid, "0.0.0.0", remark=stats_remark, protocol=link.get("protocol", DEFAULT_PROTOCOL), fingerprint=link.get("fingerprint", DEFAULT_FINGERPRINT), alpn=link.get("alpn"), port=link.get("port", DEFAULT_PORT))
-    lines = [stats_line]
+    # Do NOT inject a fake 0.0.0.0 node — clients ping it and show -1
+    lines = []
     used_names = set()
     cfg_count = max(1, min(40, int(link.get("config_count") or 1)))
     if clean_ips:
@@ -3837,7 +3925,7 @@ async def subscription_single(
             used_names.add(name)
             lines.append(generate_vless_link(uuid, host, remark=name, protocol=link.get("protocol", DEFAULT_PROTOCOL), fingerprint=link.get("fingerprint", DEFAULT_FINGERPRINT), alpn=link.get("alpn"), port=link.get("port", DEFAULT_PORT)))
     content = base64.b64encode("\n".join(lines).encode()).decode()
-    profile_title = f"0.0.0.0 | {stats_remark}"
+    profile_title = f"{host} | {stats_remark}"
     headers = subscription_metadata_headers(
         used,
         limit,
@@ -4883,7 +4971,7 @@ async def sub_group_subscription(
     )
     group_expiry_text = group_expiry or "∞"
     group_title = (
-        f"0.0.0.0 | {group_volume_text} | {group_expiry_text} | "
+        f"{host} | {group_volume_text} | {group_expiry_text} | "
         f"{sub['name']} | کانال تلگرام: logic_sec"
     )
     headers = subscription_metadata_headers(
@@ -5380,7 +5468,7 @@ async def mix_subscription(request: Request, _=Depends(require_auth)):
     vol = f"{fmt_bytes(total_used)}/{fmt_bytes(total_limit)}" if total_limit > 0 else f"{fmt_bytes(total_used)}/∞"
     mix_label = "Mix-" + random_config_name()[:6]
     stats = f"{mix_label} | {vol} | {len(lines)} configs"
-    first = generate_vless_link(ids[0], "127.0.0.1", remark=stats, protocol="vless-ws")
+    first = generate_vless_link(ids[0], host, remark=stats, protocol="vless-ws")
     content = base64.b64encode(("\n".join([first] + lines)).encode()).decode()
     # store as a sub group for reuse
     sub_id, sub = await create_sub_group(name=mix_label, desc="مخلوط‌سازی کانفیگ‌ها")
@@ -5843,20 +5931,30 @@ async def api_admins_list(token=Depends(require_perm("admins"))):
     meta = get_session_meta(token)
     if meta.get("role") != "owner":
         raise HTTPException(403, detail="فقط مالک پنل")
+    # used_bytes = sum of traffic on configs owned by this admin
+    owned_usage = {}
+    for link in LINKS.values():
+        oid = link.get("owner_id")
+        if oid:
+            owned_usage[oid] = owned_usage.get(oid, 0) + int(link.get("used_bytes") or 0)
+
     out = []
     for aid, a in ADMIN_ACCOUNTS.items():
+        used = int(owned_usage.get(aid, 0))
+        a["used_bytes"] = used  # keep in sync
         out.append({
             "id": aid,
             "username": a.get("username"),
             "label": a.get("label"),
             "limit_bytes": int(a.get("limit_bytes") or 0),
-            "used_bytes": int(a.get("used_bytes") or 0),
+            "used_bytes": used,
             "expires_at": a.get("expires_at"),
             "active": bool(a.get("active", True)),
             "blocked": bool(a.get("blocked")),
             "permissions": a.get("permissions") or {},
             "created_at": a.get("created_at"),
             "valid": admin_is_valid(a),
+            "configs_count": sum(1 for L in LINKS.values() if L.get("owner_id")==aid),
         })
     out.sort(key=lambda x: x.get("created_at") or "", reverse=True)
     return {"admins": out}
@@ -7022,6 +7120,25 @@ tr:hover td{background:var(--hover)}
 </main>
 
 <!-- Result modal after create -->
+
+<div class="modal-bg" id="editConfigModal">
+  <div class="modal">
+    <div class="modal-title" id="editCfgTitle">ویرایش کانفیگ</div>
+    <input type="hidden" id="eUid">
+    <div class="field"><label>نام</label><input id="eName"></div>
+    <div class="field"><label>پروتکل</label><select id="eProto"></select></div>
+    <div class="form-row">
+      <div class="field"><label>محدودیت حجم (GB)</label><input id="eLimit" type="number" min="0" value="0"></div>
+      <div class="field"><label>انقضا (روز از الان، 0=بدون تغییر)</label><input id="eDays" type="number" min="0" value="0"></div>
+    </div>
+    <div class="field"><label>یادداشت</label><input id="eNote" placeholder="اختیاری"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeEditConfig()">انصراف</button>
+      <button class="btn btn-p" onclick="saveEditConfig()">ذخیره</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="resultModal">
   <div class="modal">
     <div class="modal-title" data-i18n="created_title">کانفیگ ساخته شد</div>
@@ -7244,6 +7361,7 @@ function renderLinks(arr){
       <td><label class="switch"><input type="checkbox" ${on?'checked':''} onchange="toggleLink('${esc(uid)}',this.checked)"><span class="slider"></span></label></td>
       <td data-usage>${fmtB(l.used_bytes)}${l.limit_bytes?(' / '+fmtB(l.limit_bytes)):''}</td>
       <td class="ops">
+        <button class="btn btn-sm" onclick="openEditConfig('${esc(uid)}')" title="ویرایش"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
         <button class="btn btn-sm" onclick="copyLinkById('${esc(uid)}')" title="VLESS"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
         <button class="btn btn-sm" onclick="copySubById('${esc(uid)}')" title="Sub"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></button>
         <a class="btn btn-sm" href="/info/${esc(uid)}" target="_blank" title="INFO" style="text-decoration:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></a>
@@ -7310,6 +7428,39 @@ async function doAutoCreate(){
   }
   if(r){showResult(r);refreshAll()}
 }
+
+function openEditConfig(uid){
+  const l = (window.__linksMap||{})[uid];
+  if(!l){toast(lang==='fa'?'کانفیگ پیدا نشد':'Not found');return}
+  document.getElementById('eUid').value = uid;
+  document.getElementById('eName').value = l.label||l.name||'';
+  document.getElementById('eNote').value = l.note||'';
+  const limGB = l.limit_bytes ? (Number(l.limit_bytes)/1073741824) : 0;
+  document.getElementById('eLimit').value = limGB ? (Math.round(limGB*1000)/1000) : 0;
+  document.getElementById('eDays').value = 0;
+  const sel = document.getElementById('eProto');
+  const cProto = document.getElementById('cProto');
+  if(sel && cProto){ sel.innerHTML = cProto.innerHTML; sel.value = l.protocol||'vless-ws'; }
+  document.getElementById('editCfgTitle').textContent = (lang==='fa'?'ویرایش: ':'Edit: ')+(l.label||uid.slice(0,8));
+  document.getElementById('editConfigModal').classList.add('open');
+}
+function closeEditConfig(){ document.getElementById('editConfigModal').classList.remove('open'); }
+async function saveEditConfig(){
+  const uid = document.getElementById('eUid').value;
+  const body = {
+    label: document.getElementById('eName').value.trim()||undefined,
+    protocol: document.getElementById('eProto')?.value||undefined,
+    note: document.getElementById('eNote').value||'',
+    limit_value: Number(document.getElementById('eLimit').value)||0,
+    limit_unit: 'GB',
+  };
+  const days = Number(document.getElementById('eDays').value)||0;
+  if(days>0) body.expires_days = days;
+  const r = await api('/api/links/'+uid,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r){ toast(lang==='fa'?'ذخیره شد':'Saved'); closeEditConfig(); refreshAll(); }
+}
+document.getElementById('editConfigModal')?.addEventListener('click',e=>{ if(e.target.id==='editConfigModal') closeEditConfig(); });
+
 async function doManualCreate(){
   const body={
     label:document.getElementById('cName').value||undefined,
@@ -7817,11 +7968,16 @@ async def global_exception_handler(
 # ============================================================
 
 if __name__ == "__main__":
-
+    # Prefer start.sh on Railway. This block is for local/dev only.
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=PORT,
+        proxy_headers=True,
+        forwarded_allow_ips="*",
+        timeout_keep_alive=75,
+        ws_ping_interval=20,
+        ws_ping_timeout=30,
         log_level="info",
         workers=1,
     )
