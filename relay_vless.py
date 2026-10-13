@@ -148,7 +148,7 @@ async def websocket_tunnel(ws: WebSocket, uuid: str):
     writer = None
 
     try:
-        first_msg = await asyncio.wait_for(ws.receive(), timeout=15.0)
+        first_msg = await asyncio.wait_for(ws.receive(), timeout=45.0)
         if first_msg["type"] == "websocket.disconnect":
             return
         first_chunk = first_msg.get("bytes") or (first_msg.get("text") or "").encode()
@@ -167,12 +167,19 @@ async def websocket_tunnel(ws: WebSocket, uuid: str):
 
         reader, writer = await asyncio.wait_for(
             asyncio.open_connection(address, port),
-            timeout=10.0
+            timeout=25.0
         )
         sock = writer.transport.get_extra_info('socket')
         if sock:
             import socket
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            try:
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 6)
+            except (AttributeError, OSError):
+                pass
 
         if payload:
             writer.write(payload)

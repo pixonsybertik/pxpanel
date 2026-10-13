@@ -1872,8 +1872,11 @@ async def startup():
     )
 
     timeout = httpx.Timeout(
-        30.0,
-        connect=10.0,
+        60.0,
+        connect=20.0,
+        read=60.0,
+        write=60.0,
+        pool=30.0,
     )
 
     http_client = httpx.AsyncClient(
@@ -2994,9 +2997,10 @@ async def create_link_api(
         speed_bytes = int(cat["speed_limit_bytes"])
     if cat.get("clean_ips") and not clean_ips:
         clean_ips = list(cat["clean_ips"])
-    # v13.4: IP limit & concurrent user limit disabled on create → always unlimited
+    # v13.4: IP / concurrent-user / speed limits disabled on create → always unlimited
     ip_limit = 0
     connection_limit = 0
+    speed_bytes = 0
     label_val = body.get("label", "")
     if cat.get("random_name") or not str(label_val).strip():
         label_val = random_config_name()
@@ -6769,12 +6773,7 @@ tr:hover td{background:var(--hover)}
         <div class="field"><label data-i18n="label_days">انقضـا (روز)</label><input id="cDays" type="number" value="0" min="0"></div>
       </div>
       <div class="form-row">
-        <div class="field"><label data-i18n="label_limit">محدودیت حجم</label><input id="cLimit" type="number" value="0" min="0"></div>
-        <div class="field"><label data-i18n="label_unit">واحد</label><select id="cUnit"><option>GB</option><option>MB</option><option>KB</option></select></div>
-      </div>
-      <div class="form-row">
-        <div class="field"><label data-i18n="label_ip">محدودیت IP</label><input id="cIp" type="number" value="0" min="0"></div>
-        <div class="field"><label data-i18n="label_speed">سرعـت (Mbps)</label><input id="cSpeed" type="number" value="0" min="0"></div>
+        <div class="field"><label data-i18n="label_limit">محدودیت حجم (GB)</label><input id="cLimit" type="number" value="0" min="0"></div>
       </div>
       <button class="btn btn-p" style="width:100%" onclick="doManualCreate()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg>
@@ -7318,11 +7317,11 @@ async function doManualCreate(){
     category_id:document.getElementById('cGroup')?.value||'0',
     config_count:Math.max(1,Math.min(40,Number(document.getElementById('cCount').value)||1)),
     limit_value:Number(document.getElementById('cLimit').value)||0,
-    limit_unit:document.getElementById('cUnit').value||'GB',
+    limit_unit:'GB',
     expires_days:Number(document.getElementById('cDays').value)||0,
     ip_limit:0,
     connection_limit:0,
-    speed_limit_value:Number(document.getElementById('cSpeed').value)||0,
+    speed_limit_value:0,
     speed_limit_unit:'MBIT'
   };
   const r=await api('/api/links',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});

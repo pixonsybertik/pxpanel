@@ -28,9 +28,9 @@ router = APIRouter()
 
 XHTTP_BUF = 512 * 1024
 DOWNLINK_QUEUE_MAX = 512
-SESSION_IDLE_TIMEOUT = 30
+SESSION_IDLE_TIMEOUT = 240
 REAPER_INTERVAL = 10
-TCP_CONNECT_TIMEOUT = 10.0
+TCP_CONNECT_TIMEOUT = 25.0
 SOCK_BUF_SIZE = 2 * 1024 * 1024
 FLOW_MIN_HW = 256 * 1024
 FLOW_MAX_HW = 16 * 1024 * 1024
@@ -73,6 +73,13 @@ def _tune_socket(writer: asyncio.StreamWriter):
         return
     try:
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        try:
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 6)
+        except (AttributeError, OSError):
+            pass
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, SOCK_BUF_SIZE)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, SOCK_BUF_SIZE)
     except OSError:
