@@ -2503,6 +2503,21 @@ def login_error_html(
 # FIRST-RUN SETUP
 # ============================================================
 
+
+# ============================================================
+# SYSTEM METRICS (system.py)
+# ============================================================
+
+@app.get("/api/system")
+async def api_system(request: Request, _=Depends(require_auth)):
+    try:
+        from system import get_snapshot
+        return get_snapshot()
+    except Exception as exc:
+        logger.warning("system metrics: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
 @app.get("/api/setup/status")
 async def setup_status():
     return {
@@ -6686,6 +6701,25 @@ tr:hover td{background:var(--hover)}
 .spin{width:36px;height:36px;border:3px solid var(--card-b);border-top-color:var(--accent);border-radius:50%;margin:0 auto;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+.sys-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.sys-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.sys-grid{grid-template-columns:1fr}}
+.sys-card{background:var(--bg3);border:1px solid var(--card-b);border-radius:14px;padding:14px 14px 10px;display:flex;flex-direction:column;gap:8px}
+.sys-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--t3);font-weight:700;letter-spacing:.04em}
+.sys-head b{font-size:18px;color:var(--t1);font-weight:800;letter-spacing:-.02em}
+.sys-bar{height:8px;border-radius:99px;background:rgba(148,163,184,.18);overflow:hidden;position:relative}
+.sys-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width .45s ease}
+.sys-bar i.warn{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+.sys-bar i.crit{background:linear-gradient(90deg,#ef4444,#b91c1c)}
+.sys-bar.net{display:flex;gap:2px}
+.sys-bar.net i{flex:none;background:linear-gradient(90deg,#22c55e,#16a34a)}
+.sys-bar.net i.up{background:linear-gradient(90deg,#3b82f6,#2563eb)}
+.sys-meta{font-size:10px;color:var(--t3);line-height:1.4}
+.sys-chart{width:100%;height:36px;margin-top:2px}
+.sys-chart polyline{fill:none;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.sys-chart .fill{stroke:none;opacity:.15}
+
+
 .conn-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 7px;border-radius:8px;font-size:10px;font-weight:800}
 .conn-badge.green{background:rgba(34,197,94,.18);color:#4ade80}
 .conn-badge.gray{background:rgba(148,163,184,.15);color:#94a3b8}
@@ -6693,6 +6727,25 @@ tr:hover td{background:var(--hover)}
 .conn-badge.red{background:rgba(239,68,68,.18);color:#f87171}
 .spin{width:36px;height:36px;border:3px solid var(--card-b);border-top-color:var(--accent);border-radius:50%;margin:0 auto;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+.sys-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.sys-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.sys-grid{grid-template-columns:1fr}}
+.sys-card{background:var(--bg3);border:1px solid var(--card-b);border-radius:14px;padding:14px 14px 10px;display:flex;flex-direction:column;gap:8px}
+.sys-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--t3);font-weight:700;letter-spacing:.04em}
+.sys-head b{font-size:18px;color:var(--t1);font-weight:800;letter-spacing:-.02em}
+.sys-bar{height:8px;border-radius:99px;background:rgba(148,163,184,.18);overflow:hidden;position:relative}
+.sys-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width .45s ease}
+.sys-bar i.warn{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+.sys-bar i.crit{background:linear-gradient(90deg,#ef4444,#b91c1c)}
+.sys-bar.net{display:flex;gap:2px}
+.sys-bar.net i{flex:none;background:linear-gradient(90deg,#22c55e,#16a34a)}
+.sys-bar.net i.up{background:linear-gradient(90deg,#3b82f6,#2563eb)}
+.sys-meta{font-size:10px;color:var(--t3);line-height:1.4}
+.sys-chart{width:100%;height:36px;margin-top:2px}
+.sys-chart polyline{fill:none;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.sys-chart .fill{stroke:none;opacity:.15}
+
 </style>
 </head>
 <body>
@@ -6806,6 +6859,40 @@ tr:hover td{background:var(--hover)}
     <div class="metric"><div class="metric-label" data-i18n="m_links">کانفیگ‌هـا</div><div class="metric-val" id="mLinks">—</div></div>
     <div class="metric"><div class="metric-label" data-i18n="m_uptime">آپتایـم سرور</div><div class="metric-val" id="mUptime" style="font-size:17px">—</div></div>
   </div>
+
+  <div class="card" id="sysMonitor" style="margin-top:4px">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <span>🖥 منابع سیستم <span style="font-size:11px;color:var(--t3);font-weight:500">(Railway · لحظه‌ای)</span></span>
+      <span id="sysBackend" style="font-size:10px;color:var(--t3)"></span>
+    </div>
+    <div class="sys-grid">
+      <div class="sys-card">
+        <div class="sys-head"><span>CPU</span><b id="sysCpuPct">—</b></div>
+        <div class="sys-bar"><i id="sysCpuBar" style="width:0%"></i></div>
+        <div class="sys-meta" id="sysCpuMeta">—</div>
+        <svg class="sys-chart" id="chartCpu" viewBox="0 0 120 36" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="sys-card">
+        <div class="sys-head"><span>RAM</span><b id="sysRamPct">—</b></div>
+        <div class="sys-bar"><i id="sysRamBar" style="width:0%"></i></div>
+        <div class="sys-meta" id="sysRamMeta">—</div>
+        <svg class="sys-chart" id="chartRam" viewBox="0 0 120 36" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="sys-card">
+        <div class="sys-head"><span>DISK</span><b id="sysDiskPct">—</b></div>
+        <div class="sys-bar"><i id="sysDiskBar" style="width:0%"></i></div>
+        <div class="sys-meta" id="sysDiskMeta">—</div>
+        <svg class="sys-chart" id="chartDisk" viewBox="0 0 120 36" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="sys-card">
+        <div class="sys-head"><span>NET</span><b id="sysNetVal">—</b></div>
+        <div class="sys-bar net"><i id="sysNetBarDown" style="width:0%"></i><i id="sysNetBarUp" class="up" style="width:0%"></i></div>
+        <div class="sys-meta" id="sysNetMeta">—</div>
+        <svg class="sys-chart" id="chartNet" viewBox="0 0 120 36" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+  </div>
+
   <div class="g2">
     <div class="card action-card" onclick="goPage('create')">
       <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="quick_create">ساخت کانفیگ</span></div>
@@ -7238,7 +7325,66 @@ async function api(url,opts={}){
 function fmtB(b){b=Number(b)||0;if(b<1024)return b+' B';if(b<1024**2)return (b/1024).toFixed(1)+' KB';if(b<1024**3)return (b/1024**2).toFixed(2)+' MB';return (b/1024**3).toFixed(2)+' GB'}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
+
+function sparkline(svgId, data, color){
+  const el=document.getElementById(svgId);
+  if(!el)return;
+  const w=120,h=36,pad=2;
+  if(!data||!data.length){el.innerHTML='';return}
+  const max=Math.max(...data,1);
+  const min=Math.min(...data,0);
+  const span=Math.max(max-min,1);
+  const pts=data.map((v,i)=>{
+    const x=pad+(i/(Math.max(data.length-1,1)))*(w-pad*2);
+    const y=h-pad-((v-min)/span)*(h-pad*2);
+    return x.toFixed(1)+','+y.toFixed(1);
+  }).join(' ');
+  const first=pts.split(' ')[0];
+  const last=pts.split(' ').slice(-1)[0];
+  el.innerHTML=`<polygon class="fill" fill="${color}" points="${first.split(',')[0]},${h} ${pts} ${last.split(',')[0]},${h}"/><polyline stroke="${color}" points="${pts}"/>`;
+}
+function setBar(id,pct){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const p=Math.max(0,Math.min(100,Number(pct)||0));
+  el.style.width=p+'%';
+  el.classList.remove('warn','crit');
+  if(p>=90)el.classList.add('crit');
+  else if(p>=70)el.classList.add('warn');
+}
+async function loadSystem(){
+  const s=await api('/api/system');
+  if(!s||s.ok===false)return;
+  const cpu=s.cpu||{}, ram=s.ram||{}, disk=s.disk||{}, net=s.net||{}, hist=s.history||{};
+  document.getElementById('sysCpuPct').textContent=(cpu.percent??0).toFixed(1)+'%';
+  document.getElementById('sysRamPct').textContent=(ram.percent??0).toFixed(1)+'%';
+  document.getElementById('sysDiskPct').textContent=(disk.percent??0).toFixed(1)+'%';
+  const down=net.down_mbps||0, up=net.up_mbps||0;
+  document.getElementById('sysNetVal').textContent=down.toFixed(2)+' ↓';
+  setBar('sysCpuBar', cpu.percent);
+  setBar('sysRamBar', ram.percent);
+  setBar('sysDiskBar', disk.percent);
+  const scale=Math.max(down, up, 1);
+  const bd=document.getElementById('sysNetBarDown');
+  const bu=document.getElementById('sysNetBarUp');
+  if(bd){bd.style.width=Math.min(100,(down/scale)*100)+'%'; bd.classList.remove('warn','crit');}
+  if(bu){bu.style.width=Math.min(100,(up/scale)*50)+'%';}
+  document.getElementById('sysCpuMeta').textContent=`${cpu.cores||1} هسته · load ${((cpu.loadavg)||[0]).join(' / ')}`;
+  document.getElementById('sysRamMeta').textContent=`${ram.used_h||'—'} / ${ram.total_h||'—'}`;
+  document.getElementById('sysDiskMeta').textContent=`${disk.used_h||'—'} / ${disk.total_h||'—'} · ${disk.path||'/'}`;
+  document.getElementById('sysNetMeta').textContent=`↓ ${down.toFixed(2)} Mbps · ↑ ${up.toFixed(2)} Mbps · Σ ${net.rx_h||''} / ${net.tx_h||''}`;
+  document.getElementById('sysBackend').textContent=(s.backend||'')+' · live';
+  sparkline('chartCpu', hist.cpu||[], '#8b5cf6');
+  sparkline('chartRam', hist.ram||[], '#3b82f6');
+  sparkline('chartDisk', hist.disk||[], '#22c55e');
+  const netHist=[];
+  const upH=hist.net_up_mbps||[], dnH=hist.net_down_mbps||[];
+  for(let i=0;i<Math.max(upH.length,dnH.length);i++) netHist.push((dnH[i]||0)+(upH[i]||0));
+  sparkline('chartNet', netHist, '#06b6d4');
+}
+
 async function refreshAll(){
+  try{loadSystem()}catch(e){}
   if(typeof loadGroups==='function') try{await loadGroups()}catch(e){}
   const links=await api('/api/links');
   if(!links)return;
