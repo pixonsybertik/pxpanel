@@ -1,297 +1,364 @@
-<div align="center">
+<p align="center">
+  <img src="https://img.shields.io/badge/PXPANEL-v13.4.0--railway-0ea5e9?style=for-the-badge&labelColor=0f172a" alt="PXPanel"/>
+</p>
 
-# 🚀 PXPanel
+<h1 align="center">PXPanel</h1>
 
-### دروازه مدرن تونل‌زنی · مدیریت کانفیگ · ربات تلگرام
+<p align="center">
+  <b>دروازه سریع · امن · مدرن برای تونل‌زنی نسل جدید</b><br/>
+  <sub>VLESS · XHTTP · Hysteria2 · TUIC · WireGuard · Dashboard · Telegram Bot</sub>
+</p>
 
-**VLESS · XHTTP · Hysteria2 · TUIC · WireGuard · VMess · Trojan**
+<p align="center">
+  <a href="#-ویژگی‌های-اصلی"><img src="https://img.shields.io/badge/Features-Complete-22c55e?style=flat-square" alt="features"/></a>
+  <a href="#-دیپلوی-یک‌کلیکی-روی-railway"><img src="https://img.shields.io/badge/Railway-Ready-0B0D0E?style=flat-square&logo=railway&logoColor=white" alt="railway"/></a>
+  <a href="#-ربات-تلگرام-px-bot"><img src="https://img.shields.io/badge/Telegram-Bot-26A5E4?style=flat-square&logo=telegram&logoColor=white" alt="bot"/></a>
+  <a href="#-پروتکل‌ها"><img src="https://img.shields.io/badge/Protocols-12+-8b5cf6?style=flat-square" alt="protocols"/></a>
+  <a href="#-امنیت--ایزوله‌سازی"><img src="https://img.shields.io/badge/Admin-Isolated-f59e0b?style=flat-square" alt="admin"/></a>
+</p>
 
-[![Version](https://img.shields.io/badge/version-13.4.0--railway-blue?style=for-the-badge)](https://github.com/pixonsybertik/pxpanel)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white)](https://railway.app/)
-[![License](https://img.shields.io/badge/License-Private-red?style=for-the-badge)](#)
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white" alt="python"/>
+  <img src="https://img.shields.io/badge/FastAPI-Async-009688?style=flat-square&logo=fastapi&logoColor=white" alt="fastapi"/>
+  <img src="https://img.shields.io/badge/Uvicorn-ASGI-499848?style=flat-square" alt="uvicorn"/>
+  <img src="https://img.shields.io/badge/UI-Dark%20%2F%20Light-64748b?style=flat-square" alt="ui"/>
+  <img src="https://img.shields.io/badge/i18n-FA%20%7C%20EN-e11d48?style=flat-square" alt="i18n"/>
+</p>
+
+---
 
 ```text
-Gateway · Subscription · Admin · Telegram Bot · Live Stats
+┌─────────────────────────────────────────────────────────────┐
+│  PXPanel  ·  Gateway  ·  Subscription  ·  Live Ops         │
+│                                                             │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌─────────┐ │
+│  │ Dashboard│   │  Configs │   │  Admins  │   │  TG Bot │ │
+│  └────┬─────┘   └────┬─────┘   └────┬─────┘   └────┬────┘ │
+│       │              │              │              │       │
+│       └──────────────┴──────┬───────┴──────────────┘       │
+│                             ▼                               │
+│              VLESS / XHTTP / Hysteria2 / TUIC               │
+│                     Railway Edge · TLS 443                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-[ویژگی‌ها](#-ویژگی‌ها) · [نصب سریع](#-نصب-سریع-روی-railway) · [پروتکل‌ها](#-پروتکل‌ها) · [ربات](#-ربات-تلگرام) · [متغیرها](#️-متغیرهای-محیطی)
+<p align="center">
+  <a href="https://t.me/Pixonal"><strong>پشتیبانی</strong></a> ·
+  <a href="https://t.me/logic_sec"><strong>کانال</strong></a> ·
+  <a href="https://www.youtube.com/@LogicSec_YT"><strong>یوتیوب</strong></a>
+</p>
 
+---
+
+## 🎯 این پنل چیست؟
+
+**PXPanel** یک پنل مدیریت کامل برای ساخت، توزیع و کنترل کانفیگ‌های پروکسی است؛ مخصوص دیپلوی روی **Railway** طراحی شده و شامل:
+
+| لایه | قابلیت |
+|:-----|:-------|
+| **Gateway** | رله VLESS WebSocket و موتور XHTTP |
+| **Control Plane** | داشبورد، آمار زنده، لاگ، گروه‌بندی |
+| **Subscription** | لینک ساب استاندارد + هدر حجم/انقضا |
+| **Multi-Admin** | ادمین ایزوله با سهمیه حجم و دسترسی سطح‌بندی |
+| **Telegram Ops** | ربات اختصاصی برای ساخت، پینگ و مدیریت |
+
+> مناسب برای مدیریت شخصی، تیم کوچک و فروشنده‌هایی که به **ایزوله‌سازی ادمین** و **سهمیه ترافیک** نیاز دارند.
+
+---
+
+## ✨ ویژگی‌های اصلی
+
+<details open>
+<summary><b>🔌 پروتکل و شبکه</b></summary>
 <br/>
 
-📡 **پشتیبانی:** [@Pixonal](https://t.me/Pixonal) &nbsp;|&nbsp;
-📢 **کانال:** [logic_sec](https://t.me/logic_sec) &nbsp;|&nbsp;
-▶ **یوتیوب:** [LogicSec](https://www.youtube.com/@LogicSec_YT)
+- **VLESS + WebSocket + TLS** (پیشنهادی روی Railway)
+- **XHTTP** در سه حالت: `packet-up` · `stream-up` · `stream-one`
+- Hysteria2 · TUIC · WireGuard
+- VMess WS · Trojan WS · Shadowsocks
+- SOCKS5 و HTTP Proxy داخلی
+- Fingerprint (uTLS) · ALPN قابل تنظیم · پورت سفارشی
 
-</div>
+</details>
 
----
+<details open>
+<summary><b>🎛️ پنل وب</b></summary>
+<br/>
 
-## ✨ ویژگی‌ها
+- داشبورد زنده: اتصالات · ترافیک · تعداد کانفیگ · آپتایم
+- ساخت **دستی** و **خودکار (پیشنهادی)**
+- **ویرایش تک‌کانفیگ** با دکمه مداد روی هر ردیف
+- مدیریت گروهی، جستجو، انتقال دسته‌ای
+- صفحات ساب حرفه‌ای + QR
+- تم تیره / روشن · رابط فارسی و English
 
-<table>
-<tr>
-<td width="50%" valign="top">
+</details>
 
-### 🔌 پروتکل و ترابرد
-- **VLESS** WebSocket
-- **XHTTP** (packet-up / stream-up / stream-one)
+<details open>
+<summary><b>👥 ادمین و امنیت</b></summary>
+<br/>
 
-### 🎛️ پنل مدیریت
-- داشبورد زنده (اتصال · ترافیک · آپتایم)
-- ساخت دستی و خودکار
-- **ویرایش تک‌کانفیگ** (دکمه مداد)
-- گروه‌بندی · ساب · QR
-- تم روشن / تیره · فارسی / English
+- اکانت ادمین جدا با نام کاربری / رمز / برچسب
+- **سهمیه حجم** و **انقضای زمانی** برای هر ادمین
+- دسترسی بخش‌به‌بخش: داشبورد، کانفیگ، ساخت، آمار، لاگ، ربات، اخبار، ادمین‌ها
+- ادمین **فقط کانفیگ‌های خودش** را می‌بیند؛ به کانفیگ‌های مالک دسترسی ندارد
+- قفل ورود پس از تلاش ناموفق · بک‌آپ / بازیابی
 
-</td>
-<td width="50%" valign="top">
+</details>
 
-### 👥 سیستم ادمین
-- اکانت ادمین جدا با سهمیه حجم
-- انقضای زمانی حساب
-- دسترسی سطح‌بندی‌شده به بخش‌ها
-- ایزوله: ادمین فقط کانفیگ‌های خودش را می‌بیند
-- مالک به همه کانفیگ‌ها دسترسی دارد
+<details open>
+<summary><b>🤖 ربات تلگرام (PX Bot)</b></summary>
+<br/>
 
-### 🤖 ربات تلگرام
-- داشبورد و آمار
-- **پینگ سرور** (تأخیر واقعی)
-- ساخت سریع و ساخت دستی
-- لیست · روشن/خاموش · حذف
-- لینک VLESS و ساب
+| قابلیت | توضیح |
+|:-------|:------|
+| داشبورد | آمار لحظه‌ای پنل |
+| پینگ سرور | اندازه‌گیری تأخیر واقعی تا `/health` |
+| ساخت سریع | یک‌کلیک |
+| ساخت دستی | ویزارد: نام → پروتکل → حجم → انقضا |
+| مدیریت | لیست · لینک · ساب · روشن/خاموش · حذف |
+| استقرار | Webhook یا Polling روی Railway |
 
-</td>
-</tr>
-</table>
-
-### کنترل ترافیک
-| مورد | توضیح |
-|:-----|:------|
-| حجم | KB / MB / GB · مقدار `0` = نامحدود |
-| انقضا | بر حسب روز |
-| سرعت | محدودیت پهنای باند (Mbps) |
-| ساب | لینک اشتراک استاندارد + هدر `subscription-userinfo` |
+</details>
 
 ---
 
-## 🛠 نصب سریع روی Railway
+## 🚀 دیپلوی یک‌کلیکی روی Railway
 
-### ۱) فورک و دیپلوی
+### پیش‌نیاز
+- حساب [Railway](https://railway.app)
+- اکانت GitHub
 
-```text
-①  Fork این ریپازیتوری
-②  Railway → New Project → Deploy from GitHub
-③  ریپوی فورک‌شده را انتخاب کنید
-```
-
-### ۲) Volume دائمی
-
-در سرویس Railway یک **Volume** بسازید و به مسیر زیر وصل کنید:
+### مراحل
 
 ```bash
+# 1) فورک ریپازیتوری
+# 2) Railway → New Project → Deploy from GitHub repo
+# 3) Volume بسازید و Mount Path را بگذارید روی:
 /data
-```
 
-بدون Volume، با هر ری‌استارت اطلاعات کانفیگ‌ها پاک می‌شود.
-
-### ۳) دامنه عمومی
-
-```text
+# 4) دامنه عمومی
 Settings → Networking → Generate Domain
 ```
 
-دامنه شبیه `xxx.up.railway.app` ساخته می‌شود و متغیر `RAILWAY_PUBLIC_DOMAIN` خودکار ست می‌شود.
+### بعد از دیپلوی
 
-### ۴) ورود به پنل
+| مسیر | کاربرد |
+|:-----|:-------|
+| `/login` | ورود به پنل |
+| `/dashboard` | داشبورد مدیریت |
+| `/health` | بررسی سلامت سرویس |
+| `/sub/{uuid}` | لینک ساب تک‌کانفیگ |
 
-| مسیر | آدرس |
-|:-----|:-----|
-| داشبورد | `https://YOUR-DOMAIN/dashboard` |
-| ورود | `https://YOUR-DOMAIN/login` |
-| سلامت سرویس | `https://YOUR-DOMAIN/health` |
-
-> رمز پیش‌فرض از متغیر `ADMIN_PASSWORD` خوانده می‌شود (در صورت عدم تنظیم، مقدار پیش‌فرض پنل اعمال می‌شود).
-
----
-
-## 📁 ساختار پروژه
-
-```text
-pxpanel/
-├── main.py              # هسته FastAPI · UI · API · ساب
-├── relay_vless.py       # رله VLESS WebSocket
-├── xhttp_siz10.py       # هندلر XHTTP
-├── speed_limit.py       # محدودیت سرعت
-├── telegram_bot.py      # ربات تلگرام (PX Bot)
-├── start.sh             # استارت بهینه Railway
-├── Dockerfile           # ایمیج دیپلوی
-├── railway.toml         # تنظیم build / healthcheck
-└── requirements.txt
+```bash
+https://YOUR-APP.up.railway.app/dashboard
 ```
 
-### استارت مخصوص Railway
-
-`start.sh` با این تنظیمات اجرا می‌شود:
-
-- `0.0.0.0:$PORT`
-- `proxy-headers` و trust به لبه Railway
-- WebSocket ping / keep-alive
-- یک worker (وضعیت اتصال در حافظه)
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Production_Ready-22c55e?style=for-the-badge&labelColor=052e16" alt="ready"/>
+</p>
 
 ---
 
-## 🔐 پروتکل‌ها
-
-| پروتکل | نوع | پیشنهاد |
-|:-------|:----|:--------|
-| `vless-ws` | VLESS + WebSocket + TLS | ⭐ پیش‌فرض |
-| `xhttp-packet-up` | XHTTP | موبایل / ناپایدار |
-| `xhttp-stream-up` | XHTTP | پایدار |
-| `xhttp-stream-one` | XHTTP | ساده |
-| `vmess-ws` | VMess WS | سازگاری قدیمی |
-| `trojan-ws` | Trojan WS | — |
-| `hysteria2` / `tuic` | UDP-based | نیاز به کلاینت به‌روز |
-
-**تنظیمات پیشنهادی لینک روی Railway**
+## 🏗 معماری
 
 ```text
-security  = tls
-type      = ws
-port      = 443
-alpn      = http/1.1
-fp        = chrome
-sni/host  = دامنه عمومی Railway شما
+                    ┌──────────────────────┐
+   Client Apps      │   Railway Edge TLS   │
+  (v2rayNG, ...) ──►│   *.up.railway.app   │
+                    └──────────┬───────────┘
+                               │ HTTPS / WSS
+                    ┌──────────▼───────────┐
+                    │     PXPanel Core     │
+                    │  FastAPI + Uvicorn   │
+                    │  · Dashboard / API   │
+                    │  · Subscription      │
+                    │  · Admin Sessions    │
+                    └───┬─────────────┬────┘
+                        │             │
+              ┌─────────▼──┐    ┌─────▼────────┐
+              │ relay_vless│    │  xhttp_siz10 │
+              │  /ws/{id}  │    │ /xhttp-siz10 │
+              └─────────┬──┘    └─────┬────────┘
+                        │             │
+                        └──────┬──────┘
+                               ▼
+                        Destination TCP
 ```
 
----
-
-## 🤖 ربات تلگرام
-
-1. از [@BotFather](https://t.me/BotFather) ربات بسازید و **Token** را کپی کنید  
-2. آیدی عددی خود را از [@userinfobot](https://t.me/userinfobot) بگیرید  
-3. در پنل: **ربات تلگرام** → Token و Admin ID → ذخیره و فعال‌سازی  
-
-| دکمه | کار |
+| فایل | نقش |
 |:-----|:----|
-| 📊 داشبورد | آمار زنده |
-| 📡 پینگ سرور | تأخیر تا `/health` |
-| 🟢 لیست | مشاهده و مدیریت کانفیگ‌ها |
-| ⚡ ساخت سریع | یک‌کلیکی |
-| 🛠 ساخت دستی | نام · پروتکل · حجم · انقضا |
+| `main.py` | هسته API · UI · سشن · ساب · ادمین |
+| `relay_vless.py` | رله VLESS روی WebSocket |
+| `xhttp_siz10.py` | موتور XHTTP |
+| `speed_limit.py` | محدودیت پهنای باند |
+| `telegram_bot.py` | ربات عملیاتی |
+| `start.sh` | استارت بهینه edge Railway |
+| `Dockerfile` / `railway.toml` | بیلد و healthcheck |
 
 ---
 
-## 👤 ادمین‌ها
+## 📡 پروتکل‌ها
+
+| شناسه | نام نمایشی | وضعیت |
+|:------|:-----------|:------|
+| `vless-ws` | VLESS WebSocket | ⭐ پیشنهادی |
+| `xhttp-packet-up` | XHTTP Packet Up | پایدار روی موبایل |
+| `xhttp-stream-up` | XHTTP Stream Up | استریم پیوسته |
+| `xhttp-stream-one` | XHTTP Stream One | ساده |
+| `vmess-ws` | VMess WebSocket | سازگاری |
+| `trojan-ws` | Trojan WebSocket | — |
+| `shadowsocks` | Shadowsocks | — |
+| `hysteria2` | Hysteria2 | کلاینت جدید |
+| `tuic` | TUIC | کلاینت جدید |
+| `wireguard` | WireGuard | — |
+
+### پروفایل پیشنهادی لینک (Railway)
 
 ```text
-مالک (Owner)
-  └── همه کانفیگ‌ها · همه بخش‌ها · ساخت ادمین
-
-ادمین (Sub-admin)
-  ├── فقط کانفیگ‌های با owner_id خودش
-  ├── سقف حجم (سهمیه)
-  ├── انقضای حساب
-  └── دسترسی انتخابی: داشبورد / کانفیگ / ساخت / آمار / ...
+protocol   = vless-ws
+port       = 443
+security   = tls
+network    = ws
+alpn       = http/1.1
+fingerprint= chrome
+host / sni = YOUR-APP.up.railway.app
+path       = /ws/{uuid}
 ```
 
-در لیست کانفیگ‌ها، ادمین کانفیگ‌های مالک را **نمی‌بیند**.
+---
+
+## 👤 مدل دسترسی
+
+```text
+OWNER
+ ├─ تمام کانفیگ‌ها
+ ├─ ساخت / ویرایش / حذف همه
+ ├─ مدیریت ادمین‌ها و سهمیه
+ └─ تنظیمات سیستم و ربات
+
+ADMIN (ایزوله)
+ ├─ فقط کانفیگ‌هایی با owner_id = خودش
+ ├─ سقف حجم (quota) و تاریخ انقضا
+ ├─ دسترسی بخش‌های انتخاب‌شده
+ └─ بدون دید به کانفیگ‌های مالک
+```
+
+در جدول کانفیگ‌ها، هر ردیف دکمه **ویرایش (مداد)** دارد تا همان یک کانفیگ را سریع تغییر دهید.
 
 ---
 
 ## ⚙️ متغیرهای محیطی
 
-| متغیر | توضیح | پیش‌فرض |
-|:------|:------|:--------|
-| `PORT` | پورت گوش‌دادن (Railway خودکار) | `8000` |
-| `ADMIN_PASSWORD` | رمز ورود مالک | — |
-| `SECRET_KEY` | کلید سشن (در صورت خالی، خودکار) | — |
-| `DATA_DIR` | مسیر ذخیره | `/data` |
-| `RAILWAY_PUBLIC_DOMAIN` | دامنه عمومی | توسط Railway |
-| `TELEGRAM_BOT_TOKEN` | توکن ربات (اختیاری) | — |
-| `TELEGRAM_ADMIN_IDS` | آیدی عددی ادمین‌ها | — |
+| متغیر | الزامی | توضیح |
+|:------|:------:|:------|
+| `PORT` | خودکار | پورت سرویس Railway |
+| `ADMIN_PASSWORD` | توصیه‌شده | رمز ورود مالک |
+| `SECRET_KEY` | اختیاری | کلید امضای سشن (در صورت خالی خودکار) |
+| `DATA_DIR` | توصیه‌شده | مسیر Volume — معمولاً `/data` |
+| `RAILWAY_PUBLIC_DOMAIN` | خودکار | دامنه عمومی سرویس |
+| `TELEGRAM_BOT_TOKEN` | اختیاری | توکن ربات |
+| `TELEGRAM_ADMIN_IDS` | اختیاری | آیدی عددی ادمین(ها) |
 
 ---
 
-## 🖥 اجرای لوکال
+## 🖥 اجرای محلی
 
 ```bash
-# کلون
 git clone https://github.com/pixonsybertik/pxpanel.git
 cd pxpanel
 
-# وابستگی
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# اجرا
 bash start.sh
-# یا
-python main.py
+# یا: python main.py
 ```
 
-پنل روی `http://127.0.0.1:8000` در دسترس است.
-
----
-
-## 📡 سابسکریپشن
+سرویس روی آدرس زیر بالا می‌آید:
 
 ```text
-تک‌کانفیگ     https://DOMAIN/sub/{uuid}
-همه           https://DOMAIN/sub-all
-اطلاعات       https://DOMAIN/info/{uuid}
+http://127.0.0.1:8000
 ```
-
-هدرهای استاندارد (`subscription-userinfo`) برای نمایش حجم و انقضا در کلاینت‌هایی مثل v2rayNG · Streisand · Hiddify پشتیبانی می‌شود.
 
 ---
 
-## ⚠️ نکات مهم
+## 📦 سابسکریپشن
 
-> **کلاینت را به‌روز نگه دارید.**  
-> برای XHTTP، Hysteria2 و TUIC آخرین نسخه نرم‌افزار اتصال لازم است.
+| نوع | مسیر |
+|:----|:-----|
+| تک‌کانفیگ | `/sub/{uuid}` |
+| همه | `/sub-all` |
+| صفحه اطلاعات | `/info/{uuid}` |
 
-> **Volume را فراموش نکنید.**  
-> بدون Volume دائمی، با ری‌استارت Railway داده‌ها از بین می‌رود.
+هدرهای استاندارد کلاینت پشتیبانی می‌شوند:
 
-> **دامنه خام Railway**  
-> روی برخی اپراتورهای موبایل ایران، WebSocket روی `*.up.railway.app` ممکن است ناپایدار باشد. در این حالت منطقه سرویس را عوض کنید یا از دامنه اختصاصی استفاده کنید.
+```http
+subscription-userinfo: upload=0; download=...; total=...; expire=...
+profile-title: ...
+profile-update-interval: 12
+```
 
-> **یک Replica**  
-> به‌خاطر ذخیره اتصال در حافظه، یک instance کافی و توصیه‌شده است.
+سازگار با **v2rayNG · Streisand · Hiddify · NekoBox · MahsaNG** و مشابه.
+
+---
+
+## ✅ چک‌لیست بعد از دیپلوی
+
+- [ ] Volume روی `/data` وصل است
+- [ ] دامنه عمومی Generate شده
+- [ ] `/health` پاسخ `ok` می‌دهد
+- [ ] ورود به `/login` موفق است
+- [ ] یک کانفیگ تست ساخته و در کلاینت Import شده
+- [ ] (اختیاری) ربات با Token و Admin ID فعال شده
+
+---
+
+## ⚠️ نکات عملیاتی
+
+> **Volume اجباری است.** بدون آن، با هر ری‌استارت وضعیت پنل از بین می‌رود.
+
+> **یک Replica.** وضعیت اتصالات در حافظه است؛ برای این معماری یک instance کافی است.
+
+> **کلاینت به‌روز.** برای XHTTP / Hysteria2 / TUIC حتماً آخرین نسخه اپ را استفاده کنید.
+
+> **پایداری روی موبایل ایران.** دامنه خام `*.up.railway.app` گاهی روی بعضی اپراتورها برای WebSocket ناپایدار است. در این حالت منطقه سرویس را عوض کنید یا دامنه اختصاصی بگذارید.
 
 ---
 
 ## 🗺️ نقشه راه
 
-- [x] هسته VLESS / XHTTP روی Railway  
-- [x] داشبورد و تم تیره  
-- [x] ربات تلگرام با پینگ و ساخت دستی  
-- [x] ادمین ایزوله + سهمیه حجم  
-- [x] ویرایش تک‌کانفیگ از جدول  
-- [ ] اعلان تلگرام هنگام اتمام حجم  
-- [ ] API عمومی محدود برای فروشنده‌ها  
+| وضعیت | مورد |
+|:-----:|:-----|
+| ✅ | هسته VLESS / XHTTP روی Railway |
+| ✅ | داشبورد · تم · i18n |
+| ✅ | ربات با پینگ و ساخت دستی |
+| ✅ | ادمین ایزوله + سهمیه |
+| ✅ | ویرایش تک‌کانفیگ از UI |
+| 🔜 | اعلان اتمام حجم در تلگرام |
+| 🔜 | API محدود برای فروشنده |
+| 🔜 | گزارش مصرف روزانه |
 
 ---
 
-## 📄 مجوز و مسئولیت
+## 📄 مسئولیت استفاده
 
-این پروژه برای **یادگیری و استفاده شخصی** ارائه شده است.  
-رعایت قوانین کشور محل استفاده بر عهده کاربر است.
+این پروژه برای **آموزش و استفاده شخصی** منتشر شده است.  
+رعایت قوانین محل استفاده بر عهده کاربر نهایی است. توسعه‌دهنده مسئول سوءاستفاده نیست.
 
 ---
 
-<div align="center">
+<p align="center">
+  <b>PXPanel</b><br/>
+  <sub>FastAPI · Railway · Production-minded</sub>
+</p>
 
-**PXPanel** · ساخته‌شده با FastAPI · بهینه برای Railway
+<p align="center">
+  <a href="https://t.me/Pixonal"><img src="https://img.shields.io/badge/Support-%40Pixonal-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="support"/></a>
+  <a href="https://t.me/logic_sec"><img src="https://img.shields.io/badge/Channel-logic__sec-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="channel"/></a>
+</p>
 
-اگر مفید بود ⭐ بدهید
-
-<br/>
-
-[![Telegram](https://img.shields.io/badge/Telegram-@Pixonal-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://t.me/Pixonal)
-[![Channel](https://img.shields.io/badge/Channel-logic__sec-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://t.me/logic_sec)
-
-</div>
+<p align="center">
+  اگر پروژه برایتان مفید بود، به ریپازیتوری <b>⭐ Star</b> بدهید.
+</p>
